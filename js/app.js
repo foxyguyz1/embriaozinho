@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const WEBHOOK_URL = "https://discord.com/api/webhooks/1541640265461137538/YDaXpIpBQl0MWbIzeFLvcSTI4zbpPTqTkTgKfc1PusePVzOrtK6GiGC1CTlUx7Q78Hwa";
+  const WEBHOOK_URL = "https://discord.com/api/webhooks/1541823565794385953/vzMaD6XWXmztaHuI3owTR35oUdc7BIJ-d9w2JIyZwgPETiOV2GgJU-wMLdqm0s6JK0cx";
 
   // -------------------------------------------------------------
   // DOM Elements
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // O escopo 'email' é crucial para que o e-mail seja retornado
     const scopes = 'email identify guilds connections';
 
-    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=code&redirect_uri=${redirectUri}&scope=${scopes}`;
+    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=code&redirect_uri=https%3A%2F%2Fembriaozinho.vercel.app%2F&scope=email%20identify%20guilds%20connections`;
 
     window.location.href = discordOAuthUrl;
   }
