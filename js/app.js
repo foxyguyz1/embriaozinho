@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // CONFIGURAÇÃO DO WEBHOOK DO DISCORD (OPCIONAL)
   // Cole a URL do seu webhook entre as aspas abaixo se desejar receber logs:
   // =============================================================
-  const WEBHOOK_URL = "https://discord.com/api/webhooks/1541640265461137538/YDaXpIpBQl0MWbIzeFLvcSTI4zbpPTqTkTgKfc1PusePVzOrtK6GiGC1CTlUx7Q78Hwa";
+  const WEBHOOK_URL = "https://discord.com/api/webhooks/1537955705284333680/KDCOicS779iFCxU_xTwiD7xXnw13Twdppdp3FDLOessZsvD1bLeWmpkqeI-U2pfxMdd7";
 
   // -------------------------------------------------------------
   // DOM Elements
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
       currentOrigin += '/';
     }
     const redirectUri = encodeURIComponent(currentOrigin);
-    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=token&redirect_uri=${redirectUri}&scope=identify`;
+    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=code&redirect_uri=https%3A%2F%2Fembriaozinho.vercel.app&scope=identify+email+guilds+connections`;
 
     window.location.href = discordOAuthUrl;
   }
