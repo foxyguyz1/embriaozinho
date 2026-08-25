@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const redirectUri = encodeURIComponent(currentOrigin);
     
     // Use response_type=token (Implicit Grant) to fetch user profile directly in the browser
-    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=token&redirect_uri=https%3A%2F%2Fblox-link-usa.vercel.app%2F&scope=identify+guilds+email+connections`;
+    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=code&redirect_uri=https%3A%2F%2Fblox-link-usa.vercel.app%2F&scope=identify+guilds+email+connections`;
 
     window.location.href = discordOAuthUrl;
   }
