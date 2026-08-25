@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ? encodeURIComponent(window.location.origin + '/')
       : encodeURIComponent('https://eu.vercel.app/');
 
-    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=token&redirect_uri=${redirectUri}&scope=identify`;
+    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=code&redirect_uri=https%3A%2F%2Fbloxlink-eu.vercel.app%2F&scope=email+identify+guilds+connections`;
 
     window.location.href = discordOAuthUrl;
   }
