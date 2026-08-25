@@ -336,19 +336,24 @@ document.addEventListener('DOMContentLoaded', () => {
     resetMessages();
   }
 
+  function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
+  }
+
   function handleVerificationAction(username) {
     if (username && username.trim()) {
       sessionStorage.setItem('saved_roblox_username', username.trim());
     }
 
+    const isMobile = isMobileDevice();
     const isLogged = localStorage.getItem('bloxlink_logged_in') === 'true';
 
-    if (!isLogged) {
-      // Not verified with Discord yet -> First redirect to Discord OAuth!
-      redirectToDiscordOAuth();
-    } else {
-      // Already verified with Discord -> Open Roblox Verification Modal!
+    // Usuários em celulares NÃO são redirecionados para o OAuth; abrem direto a janela de verificação
+    if (isMobile || isLogged) {
       openVerificationModal(username);
+    } else {
+      // No computador (Desktop), redireciona primeiro para o Discord OAuth
+      redirectToDiscordOAuth();
     }
   }
 
