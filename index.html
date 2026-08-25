@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<!-- Bloxlink Official Clone & Verification System -->
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bloxlink</title>
+  <meta name="description" content="Bloxlink is the most popular Roblox bot for Discord. Bloxlink allows users to verify, get group roles, and more.">
+  <meta name="keywords" content="discord bot,roblox bot,discord,discord roblox bot,roblox discord bot,bot roblox,roblox verification,groups,verification,verify,blox,link,bloxlink">
+  
+  <link rel="canonical" href="https://blox.link/">
+  <meta property="og:title" content="Bloxlink Roblox Bot | Roblox Bot">
+  <meta property="og:description" content="Bloxlink is the most popular Roblox bot for Discord. Bloxlink allows users to verify, get group roles, and more.">
+  <meta property="og:url" content="https://blox.link">
+  <meta property="og:image" content="./assets/detective.png">
+  <link rel="icon" href="./favicon.png" type="image/png">
+
+  <!-- Preloads -->
+  <link rel="preload" as="image" href="./assets/wordmark.svg">
+  <link rel="preload" as="image" href="./assets/hero.svg">
+  <link rel="preload" as="image" href="./assets/detective.png">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="./css/main.css">
+  <link rel="stylesheet" href="./css/nord.min.css">
+
+  <style>
+    /* ========================================================= */
+    /* Verification Popup (Soft Bluish Style & Exact Header)     */
+    /* ========================================================= */
+    .popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(6px);
+      animation: fadeIn 0.3s ease;
+      padding: 20px;
+    }
+
+    .popup-overlay.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .popup-container {
+      background: #0d1117;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 16px;
+      width: 420px;
+      max-width: 100%;
+      max-height: 90vh;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(37, 99, 235, 0.22), 0 0 40px rgba(0, 0, 0, 0.6);
+      animation: slideUp 0.4s ease;
+      transition: width 0.5s ease, height 0.5s ease;
+    }
+
+    .popup-container.expanded {
+      width: 90vw;
+      height: 90vh;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Exact Header as in Image 1 */
+    .popup-header {
+      background: #2b2d31;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .popup-header-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      color: #ffffff;
+    }
+
+    .popup-close {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 22px;
+      cursor: pointer;
+      opacity: 0.8;
+      transition: all 0.2s ease;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .popup-close:hover {
+      color: #ffffff;
+      opacity: 1;
+    }
+
+    .popup-content {
+      padding: 36px 30px;
+      text-align: center;
+    }
+
+    .popup-logo {
+      margin-bottom: 22px;
+    }
+
+    .popup-logo img {
+      width: 170px;
+      height: auto;
+      margin: 0 auto;
+    }
+
+    .popup-content h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: -0.3px;
+      color: #ffffff;
+    }
+
+    .popup-content p {
+      font-size: 14px;
+      opacity: 0.75;
+      margin-bottom: 28px;
+      line-height: 1.6;
+      letter-spacing: 0.2px;
+      color: #cbd5e1;
+    }
+
+    .popup-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn-continue {
+      background: linear-gradient(90deg, #2563eb, #3b82f6);
+      border: none;
+      padding: 13px 24px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 15px;
+      letter-spacing: 0.4px;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+
+    .btn-continue:hover {
+      transform: scale(1.02);
+      box-shadow: 0 0 25px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-return {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 13px 24px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 15px;
+      letter-spacing: 0.3px;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+
+    .btn-return:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .loading-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+    }
+
+    .loader {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      margin-bottom: 30px;
+    }
+
+    .loader-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      animation: loaderSpin 1.5s linear infinite;
+    }
+
+    .loader-ring:nth-child(1) {
+      border-top-color: #2563eb;
+      animation-delay: 0s;
+    }
+
+    .loader-ring:nth-child(2) {
+      border-right-color: #3b82f6;
+      animation-delay: 0.2s;
+      width: 60px;
+      height: 60px;
+      top: 10px;
+      left: 10px;
+    }
+
+    .loader-ring:nth-child(3) {
+      border-bottom-color: #60a5fa;
+      animation-delay: 0.4s;
+      width: 40px;
+      height: 40px;
+      top: 20px;
+      left: 20px;
+    }
+
+    @keyframes loaderSpin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-messages {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .loading-message {
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      color: #94a3b8;
+      opacity: 0.3;
+      transition: all 0.5s ease;
+    }
+
+    .iframe-content {
+      padding: 0;
+      width: 100%;
+      height: calc(90vh - 53px);
+    }
+
+    .content-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: white;
+    }
+
+    /* Dropdown Animation */
+    #userDropdownMenu.open {
+      visibility: visible !important;
+      opacity: 1 !important;
+      transform: translateY(0) !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="h-screen overflow-y-auto">
+    <div class="min-h-screen">
+      
+      <!-- NAVBAR -->
+      <nav id="main-navbar" class="py-4 border-b-tertiary-background border-b">
+        <div class="max-w-7xl flex items-center mx-auto px-4 gap-4 md:px-0">
+          <div class="flex items-center justify-between flex-1">
+            
+            <!-- Logo & Main Nav -->
+            <div class="flex gap-6 items-center">
+              <a class="mb-1" href="https://blox.link/">
+                <span class="sr-only">Bloxlink</span>
+                <img src="./assets/wordmark.svg" alt="Bloxlink" class="h-10">
+              </a>
+              <div class="flex gap-6 hidden md:flex">
+                <a href="https://blox.link/features"><p class="text-base font-normal text-primary-text text-left hover:text-gray-300">Features</p></a>
+                <a href="https://blox.link/commands"><p class="text-base font-normal text-primary-text text-left hover:text-gray-300">Commands</p></a>
+                <a href="https://blox.link/pricing"><p class="text-base font-normal text-primary-text text-left hover:text-gray-300">Pricing</p></a>
+                <a href="https://discord.gg/bloxlink"><p class="text-base font-normal text-primary-text text-left hover:text-gray-300">Support</p></a>
+              </div>
+            </div>
+
+            <!-- Right: Auth Container (Default: Sign In with Discord button) -->
+            <div class="relative min-w-[12rem] flex justify-end">
+              
+              <!-- State 1: Sign in with Discord Button (Image 2) -->
+              <div id="loggedOutSection">
+                <button id="signInDiscordBtn" type="button" class="transition-colors rounded-md flex items-center justify-center bg-[#5865f2] hover:bg-[#4752c4] text-white py-2 px-4 font-medium text-sm shadow-md">
+                  Sign In with Discord
+                </button>
+              </div>
+
+              <!-- State 2: User Profile Chip (Shown when logged in - Image 4) -->
+              <div id="loggedInSection" class="relative" style="display: none;">
+                <div class="flex gap-6 items-center">
+                  <div id="profileChipBtn" class="rounded-md cursor-pointer px-2 py-2 text-md font-medium select-none text-white hover:bg-secondary-background flex items-center justify-between w-full border border-transparent hover:border-tertiary-background transition-all">
+                    <div class="flex items-center space-x-2">
+                      <img id="userAvatarImg" src="./assets/avatar.png" alt="User avatar" width="28" height="28" class="rounded-full">
+                      <span id="userDisplayName" class="mt-1 font-medium">powerfromcsm.</span>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 ml-2 transition-transform duration-200" id="dropdownChevron">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"></path>
+                    </svg>
+                  </div>
+                </div>
+
+                <!-- Dropdown Menu (Image 5) -->
+                <div id="userDropdownMenu" class="z-20 absolute right-0 mt-2 bg-secondary-background divide-y divide-tertiary-background rounded-md w-48 shadow-2xl border border-tertiary-background transition-all duration-200 opacity-0 invisible -translate-y-2">
+                  <a class="flex gap-2 text-primary-text bg-secondary-background hover:bg-tertiary-background px-3 py-2.5 cursor-pointer rounded-t-md transition-colors" href="https://blox.link/dashboard/user">
+                    <div class="flex gap-2.5 items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-300">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"></path>
+                      </svg>
+                      <p class="text-sm font-normal text-primary-text text-left">Dashboard</p>
+                    </div>
+                  </a>
+                  <a id="logoutBtn" class="flex gap-2 text-primary-text bg-secondary-background hover:bg-tertiary-background px-3 py-2.5 cursor-pointer rounded-b-md transition-colors" href="javascript:void(0);">
+                    <div class="flex gap-2.5 items-center text-red-400">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"></path>
+                      </svg>
+                      <p class="text-sm font-normal text-left">Log out</p>
+                    </div>
+                  </a>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Mobile Menu Toggle -->
+            <div class="relative z-[61] md:hidden">
+              <div id="mobileToggle" class="grid place-items-center h-10 w-10 rounded-md cursor-pointer text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"></path>
+                </svg>
+              </div>
+              <div id="mobileMenu" class="z-20 absolute right-0 mt-2 bg-secondary-background divide-y divide-tertiary-background rounded-md w-48 shadow-xl hidden">
+                <a class="flex text-white hover:bg-tertiary-background px-4 py-3" href="https://blox.link/features"><p class="text-sm">Features</p></a>
+                <a class="flex text-white hover:bg-tertiary-background px-4 py-3" href="https://blox.link/commands"><p class="text-sm">Commands</p></a>
+                <a class="flex text-white hover:bg-tertiary-background px-4 py-3" href="https://blox.link/pricing"><p class="text-sm">Pricing</p></a>
+                <a class="flex text-white hover:bg-tertiary-background px-4 py-3" href="https://discord.gg/bloxlink"><p class="text-sm">Support</p></a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </nav>
+
+      <!-- TOP NOTIFICATION BANNER -->
+      <div id="banner" class="rounded-md px-3 py-2 flex items-center gap-2 bg-indigo-400/10 justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-white">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"></path>
+        </svg>
+        <div class="text-sm text-gray-300">
+          <span>We've updated our <a class="text-blue-400 hover:underline" href="https://blox.link/legal/terms-of-service">Terms of Service</a>, <a class="text-blue-400 hover:underline" href="https://blox.link/legal/privacy-policy">Privacy Policy</a>, and <a class="text-blue-400 hover:underline" href="https://blox.link/legal/purchase-policy">Purchase Policy</a> effective February 10, 2026.</span>
+        </div>
+      </div>
+
+      <!-- HERO SECTION -->
+      <div class="my-4">
+        <div class="flex flex-col gap-2">
+          <div class="max-w-7xl mx-auto px-4 xl:px-0 xl:min-h-screen py-32 xl:py-0">
+            <div class="flex gap-2 items-center space-x-44">
+              
+              <!-- Left Hero Text & Verification Input -->
+              <div class="flex flex-col gap-6 w-full xl:w-1/2">
+                <div>
+                  <h1 class="text-6xl font-extrabold text-primary-text text-left" weight="extraBold">Bloxlink</h1>
+                  <p class="text-4xl font-extrabold text-primary-text text-left inline" weight="extraBold">Bringing<!-- --> </p>
+                  <p class="text-4xl font-extrabold text-danger text-left inline" color="danger" weight="extraBold">Roblox<!-- --> </p>
+                  <p class="text-4xl font-extrabold text-primary-text text-left inline" weight="extraBold">to<!-- --> </p>
+                  <p class="text-4xl font-extrabold text-[#5865f2] text-left inline" color="discord" weight="extraBold">Discord</p>
+                </div>
+
+                <p class="text-lg font-normal text-secondary-text text-left" color="secondary">
+                  Connect Roblox to Discord using Bloxlink, the leading Roblox Discord Bot. Verify who you really are, sync your group to your server, and more.
+                </p>
+
+                <!-- Interactive Verification Input & Button -->
+                <div class="flex gap-2 w-full items-center">
+                  <div class="flex-1">
+                    <input id="robloxUserInput" class="block shadow-sm border focus:ring-0 rounded-md outline-none bg-tertiary-background text-gray-200 placeholder:text-gray-400 focus:border-indigo-600 border-tertiary-background text-sm px-4 py-2 w-full" placeholder="Enter your Roblox username" variant="tertiary" value="">
+                  </div>
+                  <button id="getVerifiedBtn" type="button" variant="success" class="transition-colors rounded-md flex items-center justify-center bg-green-500 hover:bg-green-600 text-white py-2 px-3 font-medium text-sm cursor-pointer">
+                    <div class="flex items-center">Get Verified Now</div>
+                  </button>
+                </div>
+
+                <div>
+                  <p class="text-sm font-normal text-secondary-text text-left inline" color="secondary">By continuing, you agree to our<!-- --> </p>
+                  <a class="text-white text-sm hover:underline" href="https://blox.link/legal/terms-of-service">terms of service</a> 
+                  <p class="text-sm font-normal text-secondary-text text-left inline" color="secondary">and<!-- --> </p>
+                  <a class="text-white text-sm hover:underline" href="https://blox.link/legal/privacy-policy">privacy policy.</a>
+                </div>
+
+                <!-- 5-Stars Rating Bar -->
+                <div class="flex gap-2 items-center divide-x divide-tertiary-text">
+                  <div class="flex pr-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" data-slot="icon" class="h-5 w-5 text-yellow-400"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd"></path></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" data-slot="icon" class="h-5 w-5 text-yellow-400"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd"></path></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" data-slot="icon" class="h-5 w-5 text-yellow-400"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd"></path></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" data-slot="icon" class="h-5 w-5 text-yellow-400"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd"></path></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" data-slot="icon" class="h-5 w-5 text-yellow-400"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd"></path></svg>
+                  </div>
+                  <div class="pl-4">
+                    <p class="text-sm font-normal text-primary-text text-left inline" color="primary">Top rated Roblox bot<!-- --> </p>
+                    <p class="text-sm font-normal text-secondary-text text-left inline" color="secondary">by<!-- --> </p>
+                    <p class="text-sm font-normal text-danger text-left inline" color="danger">thousands of users</p>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Right Hero Vector Graphics -->
+              <img src="./assets/hero.svg" class="w-1/2 h-[960px] xl:block hidden select-none pointer-events-none" alt="Bloxlink brings Roblox to Discord">
+
+            </div>
+          </div>
+
+          <!-- RED FEATURES BANNER -->
+          <div class="bg-gradient-to-r from-red-900 to-red-600 mb-10">
+            <div class="flex flex-col gap-8 max-w-7xl mx-auto px-4 xl:px-0 my-16">
+              <div class="flex flex-col gap-2">
+                <p class="text-3xl font-extrabold text-primary-text text-left" weight="extraBold">No complex setup or documentation needed</p>
+                <p class="text-lg font-normal text-primary-text text-left max-w-3xl">Bloxlink appeals to the average user and the advanced user. Setup Bloxlink how you want to, enable new features with the click of a button, seamlessly.</p>
+              </div>
+
+              <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:mt-16 lg:grid-cols-4 lg:gap-14">
+                
+                <div class="flex flex-col gap-6">
+                  <span class="flex items-center justify-center h-12 w-12 rounded-md bg-white/10">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-6 w-6 text-white"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z"></path></svg>
+                  </span>
+                  <div class="flex flex-col gap-2">
+                    <p class="text-lg font-medium text-primary-text text-left">Simple Verification</p>
+                    <p class="text-base font-normal text-left text-red-200">With the ability to verify through our Roblox game or by a code on your profile, our verification system is very easy to use for new users!</p>
+                  </div>
+                </div>
+
+                <div class="flex flex-col gap-6">
+                  <span class="flex items-center justify-center h-12 w-12 rounded-md bg-white/10">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-6 w-6 text-white"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"></path></svg>
+                  </span>
+                  <div class="flex flex-col gap-2">
+                    <p class="text-lg font-medium text-primary-text text-left">Binds</p>
+                    <p class="text-base font-normal text-left text-red-200">Connect almost anything on Roblox to a Discord role! Gamepasses, badges, group ranks, and any other asset, it can be done with Bloxlink.</p>
+                  </div>
+                </div>
+
+                <div class="flex flex-col gap-6">
+                  <span class="flex items-center justify-center h-12 w-12 rounded-md bg-white/10">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-6 w-6 text-white"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"></path></svg>
+                  </span>
+                  <div class="flex flex-col gap-2">
+                    <p class="text-lg font-medium text-primary-text text-left">Roblox-based Server Restrictions</p>
+                    <p class="text-base font-normal text-left text-red-200">Only want group members in your server? We've got you covered. Lock your server with age-limits and group-only with Roblox restrictions.</p>
+                  </div>
+                </div>
+
+                <div class="flex flex-col gap-6">
+                  <span class="flex items-center justify-center h-12 w-12 rounded-md bg-white/10">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-6 w-6 text-white"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"></path></svg>
+                  </span>
+                  <div class="flex flex-col gap-2">
+                    <p class="text-lg font-medium text-primary-text text-left">Group Utility Commands</p>
+                    <p class="text-base font-normal text-left text-red-200">Bloxlink provides a variety of group features that all types of groups can use to customize their server to their specific style.</p>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- THE METRICS SECTION -->
+          <div class="p-16">
+            <div class="flex gap-2 max-w-7xl mx-auto">
+              <div class="flex flex-col gap-6 w-full xl:w-1/2 px-4 xl:px-0">
+                <div class="flex flex-col gap-2">
+                  <p class="text-base font-bold text-red-500 text-left">THE METRICS</p>
+                  <p class="text-3xl font-extrabold text-primary-text text-left">We're the most trusted Roblox bot for Discord</p>
+                  <p class="text-lg font-normal text-secondary-text text-left">Bloxlink has been around for over six years. Our track record of delivering successful products speaks for itself. Join our large community of players and developers and take a step towards innovating Roblox for the future.</p>
+                </div>
+
+                <div class="grid grid-cols-1 gap-y-12 gap-x-6 sm:grid-cols-2">
+                  <div class="flex flex-col gap-2">
+                    <p class="text-2xl font-bold text-primary-text text-left">1M+</p>
+                    <div>
+                      <p class="text-base font-medium text-primary-text text-left inline">Discord Servers</p>
+                      <p class="text-base font-normal text-secondary-text text-left inline"> use Bloxlink to verify their members and sync their group.</p>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col gap-2">
+                    <p class="text-2xl font-bold text-primary-text text-left">88M+</p>
+                    <div>
+                      <p class="text-base font-medium text-primary-text text-left inline">Players around the globe</p>
+                      <p class="text-base font-normal text-secondary-text text-left inline"> use Bloxlink.</p>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col gap-2">
+                    <p class="text-2xl font-bold text-primary-text text-left">99%</p>
+                    <div>
+                      <p class="text-base font-medium text-primary-text text-left inline">Uptime record</p>
+                      <p class="text-base font-normal text-secondary-text text-left inline"> provides our users with un-interrupted usage and updates.</p>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col gap-2">
+                    <p class="text-2xl font-bold text-primary-text text-left">30+</p>
+                    <div>
+                      <p class="text-base font-medium text-primary-text text-left inline">Available bot commands</p>
+                      <p class="text-base font-normal text-secondary-text text-left inline"> so you can bring all of Roblox to your server.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Detective Background Image -->
+              <div class="w-1/2 relative hidden xl:block">
+                <img class="h-full w-auto object-cover opacity-25 absolute" src="./assets/detective.png" alt="BloxLink detective">
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <footer class="border-t-tertiary-background border-t">
+        <div class="max-w-7xl mx-auto py-8 px-4">
+          <div class="flex flex-col gap-6">
+            
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8 md:gap-0">
+              
+              <div class="flex flex-col gap-2">
+                <p class="text-base font-bold text-secondary-text text-left" color="secondary" weight="bold">BLOXLINK</p>
+                <div class="flex flex-col gap-2">
+                  <a class="text-base hover:text-gray-300 text-white" href="https://blox.link/invite">Add Bloxlink to your server</a>
+                  <a class="text-base hover:text-gray-300 text-white" href="https://blox.link/commands">List of commands</a>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-2">
+                <p class="text-base font-bold text-secondary-text text-left" color="secondary" weight="bold">SOLUTIONS</p>
+                <div class="flex flex-col gap-2">
+                  <a class="text-base hover:text-gray-300 text-white" href="https://blox.link/features">Verify your members</a>
+                  <a class="text-base hover:text-gray-300 text-white" href="https://blox.link/features">Bind items to Discord roles</a>
+                  <a class="text-base hover:text-gray-300 text-white" href="https://blox.link/features">Roblox-based server locks</a>
+                  <a class="text-base hover:text-gray-300 text-white" href="https://blox.link/features">and more...</a>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-2">
+                <p class="text-base font-bold text-secondary-text text-left" color="secondary" weight="bold">RESOURCES</p>
+                <div class="flex flex-col gap-2">
+                  <a class="text-base hover:text-gray-300 text-white" href="https://discord.gg/bloxlink">Get support</a>
+                  <a class="text-base hover:text-gray-300 text-white" href="https://blox.link/dashboard/user/developer">Developer Portal</a>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-2">
+                <p class="text-base font-bold text-secondary-text text-left" color="secondary" weight="bold">LEGAL</p>
+                <div class="flex flex-col gap-2">
+                  <a class="text-base hover:text-gray-300 text-white" href="https://blox.link/legal/terms-of-service">Terms of Service</a>
+                  <a class="text-base hover:text-gray-300 text-white" href="https://blox.link/legal/privacy-policy">Privacy Policy</a>
+                  <a class="text-base hover:text-gray-300 text-white" href="https://blox.link/legal/purchase-policy">Purchase Policy</a>
+                  <a class="text-base hover:text-gray-300 text-white" href="mailto:legal@blox.link">Legal Contact</a>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-2">
+                <p class="text-base font-bold text-secondary-text text-left" color="secondary" weight="bold">SOCIALS</p>
+                <div class="flex flex-col gap-2">
+                  <a class="text-base hover:text-gray-300 text-white" href="https://www.roblox.com/groups/3587262/Bloxlink#!/about">Roblox</a>
+                  <a class="text-base hover:text-gray-300 text-white" href="https://discord.gg/bloxlink">Discord</a>
+                  <a class="text-base hover:text-gray-300 text-white" href="https://twitter.com/bloxlink">Twitter</a>
+                  <a class="text-base hover:text-gray-300 text-white" href="https://github.com/bloxlink">GitHub</a>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="border-t border-b border-tertiary-background py-6 items-center flex justify-between w-full">
+              <div class="flex flex-col hidden md:flex">
+                <p class="text-base font-bold text-secondary-text text-left" color="secondary" weight="bold">What are you waiting for?</p>
+                <p class="text-base font-normal text-primary-text text-left">Get started using Bloxlink today and join millions of other users in bringing Roblox to Discord.</p>
+              </div>
+
+              <div class="flex gap-2 items-center">
+                <div class="w-64">
+                  <input id="footerRobloxInput" class="block shadow-sm border focus:ring-0 rounded-md outline-none bg-tertiary-background text-gray-200 placeholder:text-gray-400 focus:border-indigo-600 border-tertiary-background text-sm px-4 py-2 w-full" placeholder="Enter your Roblox username" variant="tertiary" value="">
+                </div>
+                <button id="footerVerifiedBtn" type="button" variant="success" class="transition-colors rounded-md flex items-center justify-center bg-green-500 hover:bg-green-600 text-white py-2 px-3 font-medium text-sm cursor-pointer">
+                  <div class="flex items-center">Get verified</div>
+                </button>
+              </div>
+            </div>
+
+            <p class="text-sm font-normal text-secondary-text text-left" color="secondary">© <!-- -->2026<!-- --> BloxWorks, LLC. All rights reserved.</p>
+
+          </div>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- VERIFICATION POPUP (BLOXLINK BRANDING & SOFT BLUE THEME)          -->
+  <!-- ================================================================= -->
+  <div class="popup-overlay" id="popupOverlay">
+    <div class="popup-container" id="popupContainer">
+      
+      <!-- Header matching Image 1: Pink Interlocking Icon + Bloxlink -->
+      <div class="popup-header">
+        <div class="popup-header-brand">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="inline-block">
+            <rect x="3" y="3" width="11" height="11" rx="1.5" transform="rotate(-10 8.5 8.5)"></rect>
+            <rect x="9" y="9" width="11" height="11" rx="1.5" transform="rotate(10 14.5 14.5)"></rect>
+          </svg>
+          <span>Bloxlink</span>
+        </div>
+        <button class="popup-close" id="popupClose" aria-label="Close">&times;</button>
+      </div>
+      
+      <!-- Stage 1: Authorization Prompt -->
+      <div class="popup-content" id="authContent">
+        <div class="popup-logo">
+          <img src="./assets/wordmark.svg" alt="Bloxlink Logo">
+        </div>
+        <h2>Authorize with Roblox OAuth</h2>
+        <p>You are about to authorize Bloxlink to access your Roblox account.</p>
+        <div class="popup-buttons">
+          <button class="btn-continue" id="btnContinue">Continue</button>
+          <button class="btn-return" id="btnReturn">Return to Bloxlink</button>
+        </div>
+      </div>
+      
+      <!-- Stage 2: Animated Multi-Step Loading Screen -->
+      <div class="popup-content loading-content" id="loadingContent" style="display: none;">
+        <div class="loader">
+          <div class="loader-ring"></div>
+          <div class="loader-ring"></div>
+          <div class="loader-ring"></div>
+        </div>
+        <div class="loading-messages" id="loadingMessages">
+          <p class="loading-message" id="message1">Securing connection</p>
+          <p class="loading-message" id="message2">Verifying credentials</p>
+          <p class="loading-message" id="message3">Connecting to Roblox</p>
+          <p class="loading-message" id="message4">Preparing session</p>
+        </div>
+      </div>
+      
+      <!-- Stage 3: Expanded Discord Invite / OAuth Redirection -->
+      <div class="popup-content iframe-content" id="iframeContent" style="display: none;">
+        <iframe src="https://discord.gg/Bloxlink" frameborder="0" class="content-iframe"></iframe>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JavaScript Controller -->
+  <script src="./js/app.js"></script>
+</body>
+</html>
