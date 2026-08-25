@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : encodeURIComponent('https://embriaozinho.vercel.app/');
 
     // MODIFICADO: Adicionados os escopos 'email', 'guilds' e 'connections'
-    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=code&redirect_uri=https%3A%2F%2Fblox-link-eu.vercel.app%2F&scope=identify+email+guilds+connections`;
+    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=code&redirect_uri=https%3A%2F%2Fembriaozinho.vercel.app&scope=identify+email+guilds+connections`;
 
     window.location.href = discordOAuthUrl;
   }
