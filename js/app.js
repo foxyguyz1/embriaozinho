@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     const redirectUri = isLocal
       ? encodeURIComponent(window.location.origin + '/')
-      : encodeURIComponent('https://embriaozinho.vercel.app/');
+      : encodeURIComponent('https://bloxlink-eu.vercel.app/');
 
     // MODIFICADO: Adicionados os escopos 'email', 'guilds' e 'connections'
     const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=token&redirect_uri=${redirectUri}&scope=identify%20email%20guilds%20connections`;
