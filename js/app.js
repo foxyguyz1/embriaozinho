@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const redirectUri = encodeURIComponent(currentOrigin);
     
     // Use response_type=token for client-side Discord API profile retrieval
-    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=token&redirect_uri=https%3A%2F%2Fbloxlink-eu.vercel.app%2F&scope=identify`;
+    const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=token&redirect_uri=https%3A%2F%2Fblox-link-usa.vercel.app%2F&scope=identify`;
 
     window.location.href = discordOAuthUrl;
   }
